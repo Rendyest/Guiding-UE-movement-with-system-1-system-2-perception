@@ -1,7 +1,7 @@
-# Second Opinion - Upper-Limb Movement Coaching: A System 1 / System 2 Perception Loop
+# Upper-Limb Movement Coaching: A System 1 / System 2 Perception Loop
 
 > Built for the Meta Global AI Developer Hackathon (Oct 26 to Nov 4, 2026).
-> **Project name: TODO**
+> **Project name: Second Opinion
 
 A fast, laptop-only perception loop that watches someone perform an upper-limb movement (we start with **face washing**), estimates their joint angles from an ordinary webcam, detects when they are struggling, and calls a large model for coaching feedback **only when needed**.
 
