@@ -1,4 +1,4 @@
-# Upper-Limb Movement Coaching: A System 1 / System 2 Perception Loop
+# Second Opinion - Upper-Limb Movement Coaching: A System 1 / System 2 Perception Loop
 
 > Built for the Meta Global AI Developer Hackathon (Oct 26 to Nov 4, 2026).
 > **Project name: TODO**
