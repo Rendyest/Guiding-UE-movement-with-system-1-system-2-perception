@@ -1,0 +1,19 @@
+{
+  "_note": "All thresholds live here. Placeholder defaults for slice 1; tune on real clips. No threshold may be hard-coded in src.",
+  "gate": {
+    "vis_min": 0.5,
+    "bone_length_tol": 0.15,
+    "foreshortening_min": 0.5
+  },
+  "struggle": {
+    "enter_threshold": 0.7,
+    "exit_threshold": 0.4,
+    "consecutive_windows": 3
+  },
+  "coach": {
+    "cooldown_s": 60
+  },
+  "baseline": {
+    "fixed_interval_s": 2
+  }
+}

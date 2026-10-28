@@ -1,0 +1,109 @@
+{
+  "_note": "Mock replay stream (slice 1). Hand-made demo events only — never treat these as results.",
+  "events": [
+    {
+      "kind": "pose_frame",
+      "at_ms": 0,
+      "data": {
+        "t": 0.0,
+        "fps": 24,
+        "joints": {
+          "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
+          "r_elbow": { "x": 0.56, "y": 0.6, "conf": 0.93 },
+          "r_wrist": { "x": 0.55, "y": 0.8, "conf": 0.9 }
+        },
+        "angles": {
+          "r_elbow_flexion": { "deg": 152.0, "conf": 0.91 },
+          "r_shoulder_elevation": { "deg": 12.0, "conf": 0.9 }
+        },
+        "gate": { "ok": true, "reasons": [] }
+      }
+    },
+    {
+      "kind": "system1_state",
+      "at_ms": 1000,
+      "data": { "t": 1.0, "state": "moving_well", "score": 0.12, "top_signal": "stall", "escalate": false }
+    },
+    {
+      "kind": "pose_frame",
+      "at_ms": 1500,
+      "data": {
+        "t": 1.5,
+        "fps": 24,
+        "joints": {
+          "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
+          "r_elbow": { "x": 0.41, "y": 0.52, "conf": 0.93 },
+          "r_wrist": { "x": 0.48, "y": 0.35, "conf": 0.88 }
+        },
+        "angles": {
+          "r_elbow_flexion": { "deg": 87.2, "conf": 0.91 },
+          "r_shoulder_elevation": { "deg": 64.0, "conf": 0.88 }
+        },
+        "gate": { "ok": true, "reasons": [] }
+      }
+    },
+    {
+      "kind": "pose_frame",
+      "at_ms": 2000,
+      "data": {
+        "t": 2.0,
+        "fps": 24,
+        "joints": {
+          "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
+          "r_elbow": { "x": 0.54, "y": 0.55, "conf": 0.42 },
+          "r_wrist": { "x": 0.54, "y": 0.62, "conf": 0.38 }
+        },
+        "angles": {
+          "r_elbow_flexion": { "deg": 74.5, "conf": 0.4 },
+          "r_shoulder_elevation": { "deg": 58.0, "conf": 0.41 }
+        },
+        "gate": { "ok": false, "reasons": ["foreshortening"] }
+      }
+    },
+    {
+      "kind": "system1_state",
+      "at_ms": 2000,
+      "data": { "t": 2.0, "state": "hesitating", "score": 0.58, "top_signal": "stall", "escalate": false }
+    },
+    {
+      "kind": "system1_state",
+      "at_ms": 3000,
+      "data": { "t": 3.0, "state": "struggling", "score": 0.81, "top_signal": "stall", "escalate": true }
+    },
+    {
+      "kind": "coach_event",
+      "at_ms": 3100,
+      "data": {
+        "t": 3.1,
+        "trigger": "struggling_sustained",
+        "latency_ms": 1320,
+        "ok": true,
+        "message": "Take your time. Try lifting your elbow a little before bringing the cloth up.",
+        "inputs": "angle_summary"
+      }
+    },
+    {
+      "kind": "pose_frame",
+      "at_ms": 3500,
+      "data": {
+        "t": 3.5,
+        "fps": 24,
+        "joints": {
+          "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.94 },
+          "r_elbow": { "x": 0.43, "y": 0.5, "conf": 0.92 },
+          "r_wrist": { "x": 0.47, "y": 0.33, "conf": 0.9 }
+        },
+        "angles": {
+          "r_elbow_flexion": { "deg": 96.3, "conf": 0.9 },
+          "r_shoulder_elevation": { "deg": 70.5, "conf": 0.87 }
+        },
+        "gate": { "ok": true, "reasons": [] }
+      }
+    },
+    {
+      "kind": "system1_state",
+      "at_ms": 4000,
+      "data": { "t": 4.0, "state": "moving_well", "score": 0.2, "top_signal": "jitter", "escalate": false }
+    }
+  ]
+}
