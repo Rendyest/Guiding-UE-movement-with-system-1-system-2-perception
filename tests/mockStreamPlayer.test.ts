@@ -17,7 +17,7 @@ function pose(t: number, ok: boolean, reasons: GateReason[]): ReplayEvent {
 }
 
 // Fixed fixture, hand-checkable: 5 events — 3 pose frames (1 flagged),
-// 1 system1 window (escalating), 1 coach call with latency 1320 ms.
+// 1 system1 window (hesitating, not escalating), 1 coach call with latency 1320 ms.
 const FIXTURE: ReplayEvent[] = [
   pose(0.0, true, []),
   {
