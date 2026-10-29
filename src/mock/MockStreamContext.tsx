@@ -14,7 +14,7 @@ export interface MockStreamValue {
   snapshot: PlayerSnapshot | null;
 }
 
-const MockStreamContext = createContext<MockStreamValue | null>(null);
+export const MockStreamContext = createContext<MockStreamValue | null>(null);
 
 /** Loads the mock stream + config once so playback persists across routes. */
 export function MockStreamProvider({ children }: { children: ReactNode }) {

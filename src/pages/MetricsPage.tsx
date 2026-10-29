@@ -1,5 +1,6 @@
 import { MockTransport } from '../components/MockTransport';
 import { useMockStream } from '../mock/MockStreamContext';
+import { useLiveStats } from '../pose/liveStats';
 import type { System1State } from '../contracts';
 
 /**
@@ -9,6 +10,7 @@ import type { System1State } from '../contracts';
  */
 export function MetricsPage() {
   const { config, player } = useMockStream();
+  const liveStats = useLiveStats();
 
   let frames = 0;
   let flagged = 0;
@@ -50,6 +52,16 @@ export function MetricsPage() {
           <li>Coach calls made (this replay): {coachCalls}</li>
         </ul>
         <p>Fixed-interval baseline (from config.json): {interval}.</p>
+      </section>
+      <section aria-label="Live pipeline">
+        <h2>Live pipeline</h2>
+        <p>
+          {liveStats.status === 'live'
+            ? `Camera on, about ${liveStats.fps} fps.`
+            : liveStats.status === 'loading'
+              ? 'Camera starting…'
+              : 'Camera off.'}
+        </p>
       </section>
     </div>
   );

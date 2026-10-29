@@ -15,5 +15,9 @@
   },
   "baseline": {
     "fixed_interval_s": 2
+  },
+  "ui": {
+    "readout_hz": 5,
+    "live_emit_hz": 30
   }
 }

@@ -1,0 +1,161 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import type { PoseLandmarker } from '@mediapipe/tasks-vision';
+import type { PoseFrame } from '../contracts';
+import { config } from '../config';
+import { buildPoseFrame } from './poseFrame';
+import { cameraErrorMessage, OFFLINE_MESSAGE } from './cameraErrors';
+import { publishLiveStats } from './liveStats';
+/**
+ * Where the model file is loaded from (the only runtime network calls this
+ * slice makes, besides the local dev server):
+ * - Pose weights (pose_landmarker_lite.task): Google's MediaPipe model
+ *   bucket, pinned version path below. `latest` is a moving target and has
+ *   silently changed model bytes before, so we pin `/1/` instead.
+ * - WASM runtime: jsDelivr copy of this package's own wasm, derived from
+ *   TASKS_VISION_VERSION so the package and WASM versions cannot drift.
+ * The npm package (@mediapipe/tasks-vision) ships only the JS wrapper.
+ */
+export const TASKS_VISION_VERSION = '0.10.14';
+export const POSE_MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task';
+const VISION_WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
+
+export type LiveStatus = 'idle' | 'loading' | 'live' | 'denied' | 'error';
+
+export interface LivePose {
+  videoRef: RefObject<HTMLVideoElement>;
+  status: LiveStatus;
+  error: string | null;
+  /** Latest pose_frame in the SAME contract as the mock stream. */
+  frame: PoseFrame | null;
+  fps: number;
+  start: () => void;
+  stop: () => void;
+}
+
+export function useLivePose(): LivePose {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const landmarkerRef = useRef<PoseLandmarker | null>(null);
+  const rafRef = useRef(0);
+  const lastTRef = useRef(0);
+  const lastEmitRef = useRef(0);
+  const fpsRef = useRef(0);
+  const aliveRef = useRef(true);
+  const [status, setStatus] = useState<LiveStatus>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const [frame, setFrame] = useState<PoseFrame | null>(null);
+  const [fps, setFps] = useState(0);
+
+  // Reviewer routes read pipeline status from here; participant routes never do.
+  useEffect(() => {
+    publishLiveStats({ status, fps });
+  }, [status, fps]);
+
+  const stop = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    const video = videoRef.current;
+    if (video?.srcObject) {
+      for (const track of (video.srcObject as MediaStream).getTracks()) track.stop();
+      video.srcObject = null;
+    }
+    landmarkerRef.current?.close();
+    landmarkerRef.current = null;
+    if (aliveRef.current) {
+      setFrame(null);
+      setFps(0);
+      setStatus('idle');
+    }
+  }, []);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      stop();
+    };
+  }, [stop]);
+
+  const start = useCallback(() => {
+    if (!('mediaDevices' in navigator) || !navigator.mediaDevices?.getUserMedia) {
+      setStatus('denied');
+      setError('This browser cannot reach a camera. Try a recent Chrome or Edge on localhost or HTTPS.');
+      return;
+    }
+    setStatus('loading');
+    setError(null);
+
+    (async () => {
+      try {
+        let landmarker: PoseLandmarker;
+        try {
+          const vision = await import('@mediapipe/tasks-vision');
+          const resolver = await vision.FilesetResolver.forVisionTasks(VISION_WASM_URL);
+          landmarker = await vision.PoseLandmarker.createFromOptions(resolver, {
+            baseOptions: { modelAssetPath: POSE_MODEL_URL, delegate: 'GPU' },
+            runningMode: 'VIDEO',
+            numPoses: 1,
+          });
+        } catch {
+          if (!aliveRef.current) return;
+          setStatus('error');
+          setError(OFFLINE_MESSAGE);
+          return;
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        if (!aliveRef.current) {
+          for (const track of stream.getTracks()) track.stop();
+          landmarker.close();
+          return;
+        }
+        const video = videoRef.current;
+        if (!video) {
+          for (const track of stream.getTracks()) track.stop();
+          landmarker.close();
+          throw new Error('video element not ready');
+        }
+        video.srcObject = stream;
+        await video.play();
+        landmarkerRef.current = landmarker;
+        setStatus('live');
+        lastTRef.current = performance.now();
+        lastEmitRef.current = 0;
+
+        const loop = () => {
+          rafRef.current = requestAnimationFrame(loop);
+          const lm = landmarkerRef.current;
+          const vd = videoRef.current;
+          if (!lm || !vd || vd.readyState < 2) return;
+          const now = performance.now();
+          const dt = now - lastTRef.current;
+          lastTRef.current = now;
+          if (dt > 0) {
+            const inst = 1000 / dt;
+            fpsRef.current = fpsRef.current === 0 ? inst : fpsRef.current * 0.9 + inst * 0.1;
+            setFps(Math.round(fpsRef.current));
+          }
+          // Emit at most ui.live_emit_hz: the UI must not compete with inference.
+          if (now - lastEmitRef.current < 1000 / config.ui.live_emit_hz) return;
+          const res = lm.detectForVideo(vd, now);
+          const points = res.landmarks?.[0];
+          if (!points) return; // nobody in view: hold the last frame
+          lastEmitRef.current = now;
+          setFrame(buildPoseFrame(points, vd.currentTime, Math.round(fpsRef.current)));
+        };
+        rafRef.current = requestAnimationFrame(loop);
+      } catch (e: unknown) {
+        if (!aliveRef.current) return;
+        landmarkerRef.current?.close();
+        landmarkerRef.current = null;
+        const mapped = cameraErrorMessage(e);
+        setStatus(mapped.status);
+        setError(mapped.message);
+      }
+    })();
+  }, []);
+
+  return { videoRef, status, error, frame, fps, start, stop };
+}

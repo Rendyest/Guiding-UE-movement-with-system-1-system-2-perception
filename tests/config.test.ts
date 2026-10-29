@@ -7,6 +7,7 @@ const GOOD_CONFIG = {
   struggle: { enter_threshold: 0.7, exit_threshold: 0.4, consecutive_windows: 3 },
   coach: { cooldown_s: 60 },
   baseline: { fixed_interval_s: 2 },
+  ui: { readout_hz: 5, live_emit_hz: 30 },
 };
 
 describe('config validation', () => {
@@ -27,6 +28,18 @@ describe('config validation', () => {
   it('rejects null and non-objects', () => {
     expect(isAppConfig(null)).toBe(false);
     expect(isAppConfig('config.json')).toBe(false);
+  });
+});
+
+describe('config ui section', () => {
+  it('rejects a config missing the ui section', () => {
+    const { ui: _ui, ...rest } = GOOD_CONFIG;
+    void _ui;
+    expect(isAppConfig(rest)).toBe(false);
+  });
+
+  it('rejects a non-numeric readout rate', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, ui: { readout_hz: 'fast', live_emit_hz: 30 } })).toBe(false);
   });
 });
 

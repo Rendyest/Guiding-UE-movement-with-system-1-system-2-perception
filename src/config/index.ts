@@ -19,6 +19,10 @@ export interface AppConfig {
   coach: {
     cooldown_s: number;
   };
+  ui: {
+    readout_hz: number;
+    live_emit_hz: number;
+  };
   baseline: {
     fixed_interval_s: number;
   };
@@ -48,13 +52,23 @@ function isCoach(v: unknown): v is AppConfig['coach'] {
   return isPlainObject(v) && isNum(v['cooldown_s']);
 }
 
+function isUi(v: unknown): v is AppConfig['ui'] {
+  return isPlainObject(v) && isNum(v['readout_hz']) && isNum(v['live_emit_hz']);
+}
+
 function isBaseline(v: unknown): v is AppConfig['baseline'] {
   return isPlainObject(v) && isNum(v['fixed_interval_s']);
 }
 
 export function isAppConfig(v: unknown): v is AppConfig {
   if (!isPlainObject(v)) return false;
-  return isGate(v['gate']) && isStruggle(v['struggle']) && isCoach(v['coach']) && isBaseline(v['baseline']);
+  return (
+    isGate(v['gate']) &&
+    isStruggle(v['struggle']) &&
+    isCoach(v['coach']) &&
+    isBaseline(v['baseline']) &&
+    isUi(v['ui'])
+  );
 }
 
 /** Nested objects merge key by key; anything else (numbers, arrays) is replaced. */
