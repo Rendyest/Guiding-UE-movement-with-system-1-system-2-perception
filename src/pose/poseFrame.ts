@@ -34,7 +34,7 @@ export function buildPoseFrame(points: Point2D[], t: number, fps: number): PoseF
   const rEl = J(R_ELBOW);
   const rWr = J(R_WRIST);
   const flex = elbowFlexion(rSh, rEl, rWr);
-  const elev = shoulderElevation(rSh, rEl, J(R_HIP));
+  const elev = shoulderElevation(rSh, rEl);
   return {
     t,
     fps,
@@ -45,12 +45,15 @@ export function buildPoseFrame(points: Point2D[], t: number, fps: number): PoseF
       l_shoulder: J(L_SHOULDER),
       l_elbow: J(L_ELBOW),
       l_wrist: J(L_WRIST),
+      r_hip: J(R_HIP),
+      l_hip: J(L_HIP),
     },
     angles: {
       r_elbow_flexion: { deg: flex.deg, conf: flex.conf },
       r_shoulder_elevation: { deg: elev.deg, conf: elev.conf },
     },
-    // Slice 3 computes the real gate; live frames are provisionally OK.
+    // The render layer merges the real gate (see pose/gate.ts, with the
+    // stored calibration); live frames are provisionally OK.
     gate: { ok: true, reasons: [] },
   };
 }

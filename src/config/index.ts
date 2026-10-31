@@ -10,6 +10,8 @@ export interface AppConfig {
     vis_min: number;
     bone_length_tol: number;
     foreshortening_min: number;
+    smooth_frames: number;
+    history_frames: number;
   };
   struggle: {
     enter_threshold: number;
@@ -38,9 +40,20 @@ function isNum(v: unknown): v is number {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+function isPositiveInt(v: unknown): v is number {
+  return typeof v === 'number' && Number.isInteger(v) && v > 0;
+}
+
 function isGate(v: unknown): v is AppConfig['gate'] {
   if (!isPlainObject(v)) return false;
-  return isNum(v['vis_min']) && isNum(v['bone_length_tol']) && isNum(v['foreshortening_min']);
+  return (
+    isNum(v['vis_min']) &&
+    isNum(v['bone_length_tol']) &&
+    isNum(v['foreshortening_min']) &&
+    isPositiveInt(v['smooth_frames']) &&
+    isPositiveInt(v['history_frames']) &&
+    (v['smooth_frames'] as number) <= (v['history_frames'] as number)
+  );
 }
 
 function isStruggle(v: unknown): v is AppConfig['struggle'] {

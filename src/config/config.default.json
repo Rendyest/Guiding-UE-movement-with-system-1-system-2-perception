@@ -2,9 +2,12 @@
   "_note": "All thresholds live here. Placeholder defaults for slice 1; tune on real clips. No threshold may be hard-coded in src.",
   "gate": {
     "vis_min": 0.5,
-    "bone_length_tol": 0.15,
-    "foreshortening_min": 0.5
+    "bone_length_tol": 0.3,
+    "foreshortening_min": 0.5,
+    "smooth_frames": 5,
+    "history_frames": 15
   },
+  "gate_note": "Gate ratios are scale-normalised by shoulder width (see src/pose/gate.ts): bone_length_tol is the max fractional change of a scale-invariant bone length versus the median of recent history (0.3 = 30 percent); foreshortening_min is the minimum median projected/expected arm-bone ratio over smooth_frames recent frames; history_frames is how many recent lengths the drift reference covers.",
   "struggle": {
     "enter_threshold": 0.7,
     "exit_threshold": 0.4,

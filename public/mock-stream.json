@@ -10,7 +10,10 @@
         "joints": {
           "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
           "r_elbow": { "x": 0.56, "y": 0.6, "conf": 0.93 },
-          "r_wrist": { "x": 0.55, "y": 0.8, "conf": 0.9 }
+          "r_wrist": { "x": 0.55, "y": 0.8, "conf": 0.9 },
+          "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.93 },
+          "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.92 },
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.92 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 152.0, "conf": 0.91 },
@@ -33,7 +36,10 @@
         "joints": {
           "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
           "r_elbow": { "x": 0.41, "y": 0.52, "conf": 0.93 },
-          "r_wrist": { "x": 0.48, "y": 0.35, "conf": 0.88 }
+          "r_wrist": { "x": 0.48, "y": 0.35, "conf": 0.88 },
+          "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.9 },
+          "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.91 },
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.91 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 87.2, "conf": 0.91 },
@@ -51,7 +57,10 @@
         "joints": {
           "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.95 },
           "r_elbow": { "x": 0.54, "y": 0.55, "conf": 0.42 },
-          "r_wrist": { "x": 0.54, "y": 0.62, "conf": 0.38 }
+          "r_wrist": { "x": 0.54, "y": 0.62, "conf": 0.38 },
+          "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.88 },
+          "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.88 },
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.88 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 74.5, "conf": 0.4 },
@@ -91,7 +100,10 @@
         "joints": {
           "r_shoulder": { "x": 0.55, "y": 0.4, "conf": 0.94 },
           "r_elbow": { "x": 0.43, "y": 0.5, "conf": 0.92 },
-          "r_wrist": { "x": 0.47, "y": 0.33, "conf": 0.9 }
+          "r_wrist": { "x": 0.47, "y": 0.33, "conf": 0.9 },
+          "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.9 },
+          "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.9 },
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.9 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 96.3, "conf": 0.9 },

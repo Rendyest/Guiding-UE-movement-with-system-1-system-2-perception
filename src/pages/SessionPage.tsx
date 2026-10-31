@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MockTransport } from '../components/MockTransport';
 import { SourceSwitch, type PictureSource } from '../components/SourceSwitch';
 import { VideoStage } from '../components/VideoStage';
@@ -7,6 +7,8 @@ import { useLivePose } from '../pose/useLivePose';
 import { useMockStream } from '../mock/MockStreamContext';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { config } from '../config';
+import { createGateTracker, mergeGate, type GateTracker } from '../pose/gate';
+import { useCalibration } from '../pose/calibration';
 import { statusText } from '../pose/statusText';
 import type { PoseFrame } from '../contracts';
 
@@ -22,6 +24,36 @@ export function SessionPage({ initialSource = 'mock' }: { initialSource?: Pictur
   const mockFrame = (snapshot?.latest.pose_frame?.data ?? null) as PoseFrame | null;
   const frame = source === 'live' ? live.frame : mockFrame;
   const cameraOn = source === 'live' && live.status === 'live';
+
+  // Merge the stored calibration into the gate: flags are only added, and
+  // without a baseline the gate runs visibility plus drift (less reliable).
+  const { state: calibration } = useCalibration();
+  const trackerRef = useRef<GateTracker | null>(null);
+  if (trackerRef.current === null) {
+    trackerRef.current = createGateTracker(config.gate);
+  }
+  // Each frame is pushed exactly once (StrictMode-safe): the ref guards
+  // against the push effect re-running on the same frame object.
+  const lastPushedRef = useRef<PoseFrame | null>(null);
+  const [effectiveFrame, setEffectiveFrame] = useState<PoseFrame | null>(null);
+
+  // Fresh history whenever the picture source, the camera lifecycle, or the
+  // stored baseline changes (re-run calibration, cleared calibration).
+  useEffect(() => {
+    trackerRef.current?.reset();
+    lastPushedRef.current = null;
+  }, [source, live.status, calibration.baseline]);
+
+  useEffect(() => {
+    if (!frame) {
+      setEffectiveFrame(null);
+      return;
+    }
+    const tracker = trackerRef.current;
+    if (!tracker || lastPushedRef.current === frame) return;
+    lastPushedRef.current = frame;
+    setEffectiveFrame(mergeGate(frame, tracker.push(frame.joints, calibration.baseline)));
+  }, [frame, calibration.baseline]);
 
   return (
     <div>      <h1>Session — wash your face with the cloth</h1>
@@ -40,12 +72,13 @@ export function SessionPage({ initialSource = 'mock' }: { initialSource?: Pictur
 
       <ErrorBoundary>
         <VideoStage
-          frame={frame}
+          frame={effectiveFrame}
           mirrored={mirrored}
           showSkeleton={showSkeleton}
           dimBelowConf={config.gate.vis_min}
           videoRef={live.videoRef}
           cameraOn={cameraOn}
+          uncalibrated={calibration.baseline === null}
         />
       </ErrorBoundary>
 
@@ -58,7 +91,7 @@ export function SessionPage({ initialSource = 'mock' }: { initialSource?: Pictur
         </button>
       </div>
 
-      <AngleReadout frame={frame} />
+      <AngleReadout frame={effectiveFrame} />
 
       {source === 'mock' && <MockTransport />}
 

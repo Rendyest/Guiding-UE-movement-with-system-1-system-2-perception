@@ -3,7 +3,7 @@ import { buildConfig, deepMerge, isAppConfig } from '../src/config';
 import defaults from '../src/config/config.default.json';
 
 const GOOD_CONFIG = {
-  gate: { vis_min: 0.5, bone_length_tol: 0.15, foreshortening_min: 0.5 },
+  gate: { vis_min: 0.5, bone_length_tol: 0.3, foreshortening_min: 0.5, smooth_frames: 5, history_frames: 15 },
   struggle: { enter_threshold: 0.7, exit_threshold: 0.4, consecutive_windows: 3 },
   coach: { cooldown_s: 60 },
   baseline: { fixed_interval_s: 2 },
@@ -28,6 +28,28 @@ describe('config validation', () => {
   it('rejects null and non-objects', () => {
     expect(isAppConfig(null)).toBe(false);
     expect(isAppConfig('config.json')).toBe(false);
+  });
+});
+
+describe('config gate section', () => {
+  it('rejects a gate missing the smoothing window', () => {
+    const { smooth_frames: _dropped, ...gate } = GOOD_CONFIG.gate;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, gate })).toBe(false);
+  });
+
+  it('rejects a non-integer history length', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, history_frames: 7.5 } })).toBe(false);
+  });
+
+  it('rejects a zero smoothing window', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, smooth_frames: 0 } })).toBe(false);
+  });
+
+  it('rejects a smoothing window larger than the history', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, smooth_frames: 16, history_frames: 15 } }),
+    ).toBe(false);
   });
 });
 

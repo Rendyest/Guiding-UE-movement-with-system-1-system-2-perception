@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import type { PoseLandmarker } from '@mediapipe/tasks-vision';
-import type { PoseFrame } from '../contracts';
+import type { Joint2D, PoseFrame } from '../contracts';
 import { config } from '../config';
 import { buildPoseFrame } from './poseFrame';
 import { cameraErrorMessage, OFFLINE_MESSAGE } from './cameraErrors';
-import { publishLiveStats } from './liveStats';
+import { publishGateDetails, publishLiveStats, type GateBoneDetails, type GateDetails } from './liveStats';
+import {
+  createGateTracker,
+  median,
+  type BoneBaseline,
+  type GateHistories,
+  type GateResult,
+  type GateThresholds,
+} from './gate';
+import { loadCalibrationState } from './calibration';
 /**
  * Where the model file is loaded from (the only runtime network calls this
  * slice makes, besides the local dev server):
@@ -34,6 +43,55 @@ export interface LivePose {
   stop: () => void;
 }
 
+function sameBaseline(a: BoneBaseline | null, b: BoneBaseline | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.upperArm === b.upperArm && a.forearm === b.forearm && a.shoulderWidth === b.shoulderWidth;
+}
+
+/** Dev-only snapshot of the latest gate computation for /metrics. Never persisted. */
+function buildGateDetails(
+  joints: Record<string, Joint2D>,
+  baseline: BoneBaseline | null,
+  t: GateThresholds,
+  hist: GateHistories,
+  result: GateResult,
+): GateDetails {
+  const visDefs = [
+    { key: 'r_shoulder', label: 'right shoulder' },
+    { key: 'r_elbow', label: 'right elbow' },
+    { key: 'r_wrist', label: 'right wrist' },
+    { key: 'l_shoulder', label: 'left shoulder' },
+  ] as const;
+  const bone = (norms: number[], ratios: number[]): GateBoneDetails => {
+    const normLen = norms.length > 0 ? norms[norms.length - 1] : null;
+    const ratio = ratios.length > 0 ? ratios[ratios.length - 1] : null;
+    const smoothedRatio = median(ratios.slice(-t.smooth_frames));
+    const historyMedian = median(norms);
+    const jumpFraction =
+      normLen !== null && historyMedian !== null && historyMedian > 0
+        ? Math.abs(normLen - historyMedian) / historyMedian
+        : null;
+    return { ratio, smoothedRatio, normLen, historyMedian, jumpFraction };
+  };
+  return {
+    hasBaseline: baseline !== null,
+    baseline,
+    visMin: t.vis_min,
+    foreshorteningMin: t.foreshortening_min,
+    boneLengthTol: t.bone_length_tol,
+    joints: visDefs.map(({ key, label }) => {
+      const joint = joints[key];
+      const conf = joint && typeof joint.conf === 'number' ? joint.conf : null;
+      return { label, conf, visible: conf !== null && conf >= t.vis_min };
+    }),
+    scale: result.scale ?? null,
+    upperArm: bone(hist.upperArmNorms, hist.upperArmRatios),
+    forearm: bone(hist.forearmNorms, hist.forearmRatios),
+    reasons: [...result.reasons],
+  };
+}
+
 export function useLivePose(): LivePose {
   const videoRef = useRef<HTMLVideoElement>(null);
   const landmarkerRef = useRef<PoseLandmarker | null>(null);
@@ -41,6 +99,9 @@ export function useLivePose(): LivePose {
   const lastTRef = useRef(0);
   const lastEmitRef = useRef(0);
   const fpsRef = useRef(0);
+  const gateTrackerRef = useRef(createGateTracker(config.gate));
+  const gateBaselineRef = useRef<BoneBaseline | null>(null);
+  const lastGatePublishRef = useRef(0);
   const aliveRef = useRef(true);
   const [status, setStatus] = useState<LiveStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +122,9 @@ export function useLivePose(): LivePose {
     }
     landmarkerRef.current?.close();
     landmarkerRef.current = null;
+    gateTrackerRef.current.reset();
+    gateBaselineRef.current = null;
+    publishGateDetails(null);
     if (aliveRef.current) {
       setFrame(null);
       setFps(0);
@@ -143,7 +207,23 @@ export function useLivePose(): LivePose {
           const points = res.landmarks?.[0];
           if (!points) return; // nobody in view: hold the last frame
           lastEmitRef.current = now;
-          setFrame(buildPoseFrame(points, vd.currentTime, Math.round(fpsRef.current)));
+          const nextFrame = buildPoseFrame(points, vd.currentTime, Math.round(fpsRef.current));
+          const baseline = loadCalibrationState().baseline;
+          const gateTracker = gateTrackerRef.current;
+          if (!sameBaseline(gateBaselineRef.current, baseline)) {
+            gateTracker.reset();
+            gateBaselineRef.current = baseline;
+          }
+          const gateResult = gateTracker.push(nextFrame.joints, baseline);
+          setFrame(nextFrame);
+          // Dev panel updates at most the slower of the readout and emit rates.
+          const gatePublishIntervalMs = 1000 / Math.min(config.ui.readout_hz, config.ui.live_emit_hz);
+          if (now - lastGatePublishRef.current >= gatePublishIntervalMs) {
+            lastGatePublishRef.current = now;
+            publishGateDetails(
+              buildGateDetails(nextFrame.joints, baseline, config.gate, gateTracker.snapshot(), gateResult),
+            );
+          }
         };
         rafRef.current = requestAnimationFrame(loop);
       } catch (e: unknown) {

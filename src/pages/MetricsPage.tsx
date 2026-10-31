@@ -1,7 +1,19 @@
 import { MockTransport } from '../components/MockTransport';
 import { useMockStream } from '../mock/MockStreamContext';
-import { useLiveStats } from '../pose/liveStats';
+import { useGateDetails, useLiveStats, type GateBoneDetails } from '../pose/liveStats';
 import type { System1State } from '../contracts';
+
+function fmt(v: number | null): string {
+  return v === null ? '—' : v.toFixed(3);
+}
+
+function boneLine(name: string, bone: GateBoneDetails, foreshorteningMin: number, tol: number): string {
+  return (
+    `${name}: ratio ${fmt(bone.ratio)}, smoothed ratio ${fmt(bone.smoothedRatio)} ` +
+    `(min ${foreshorteningMin}); normLen ${fmt(bone.normLen)}, history median ${fmt(bone.historyMedian)}, ` +
+    `jump fraction ${fmt(bone.jumpFraction)} (tol ${tol})`
+  );
+}
 
 /**
  * Reviewer/judge route. The full LoopMetricsPanel (three policies, chart,
@@ -11,6 +23,7 @@ import type { System1State } from '../contracts';
 export function MetricsPage() {
   const { config, player } = useMockStream();
   const liveStats = useLiveStats();
+  const gate = useGateDetails();
 
   let frames = 0;
   let flagged = 0;
@@ -62,6 +75,35 @@ export function MetricsPage() {
               ? 'Camera starting…'
               : 'Camera off.'}
         </p>
+      </section>
+      <section aria-label="Gate (dev)">
+        <h2>Gate (dev)</h2>
+        {gate === null ? (
+          <p>No live source.</p>
+        ) : (
+          <>
+            <p>
+              Baseline:{' '}
+              {gate.hasBaseline && gate.baseline
+                ? `upper arm ${gate.baseline.upperArm.toFixed(3)}, forearm ${gate.baseline.forearm.toFixed(3)}, shoulder width ${gate.baseline.shoulderWidth.toFixed(3)}.`
+                : 'none — foreshortening off, visibility and drift on.'}
+            </p>
+            <ul>
+              {gate.joints.map((joint) => (
+                <li key={joint.label}>
+                  {joint.label} visibility: {joint.conf === null ? '—' : joint.conf.toFixed(2)} (min{' '}
+                  {gate.visMin})
+                </li>
+              ))}
+            </ul>
+            <p>Scale: {fmt(gate.scale)}</p>
+            <ul>
+              <li>{boneLine('upper arm', gate.upperArm, gate.foreshorteningMin, gate.boneLengthTol)}</li>
+              <li>{boneLine('forearm', gate.forearm, gate.foreshorteningMin, gate.boneLengthTol)}</li>
+            </ul>
+            <p>Reasons: {gate.reasons.length === 0 ? 'none' : gate.reasons.join(', ')}.</p>
+          </>
+        )}
       </section>
     </div>
   );

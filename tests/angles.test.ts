@@ -43,22 +43,38 @@ describe('elbowFlexion', () => {
 });
 
 describe('shoulderElevation', () => {
-  // Shoulder at origin, hip straight down (image coords): hanging arm = 0.
-  it('gives 0 when the arm hangs: elbow (0,2) below shoulder (0,0), hip (0,1)', () => {
-    expect(shoulderElevation(j(0, 0), j(0, 2), j(0, 1)).deg).toBe(0);
+  // Reference is the image vertical (straight down), not the hip.
+  it('gives 0 for an arm hanging straight down: shoulder (100,100), elbow (100,200)', () => {
+    expect(shoulderElevation(j(100, 100), j(100, 200)).deg).toBe(0);
   });
 
-  it('gives 90 when the arm is horizontal: elbow (2,0)', () => {
-    expect(shoulderElevation(j(0, 0), j(2, 0), j(0, 1)).deg).toBe(90);
+  it('gives 90 for a horizontal arm: shoulder (100,100), elbow (200,100)', () => {
+    expect(shoulderElevation(j(100, 100), j(200, 100)).deg).toBe(90);
   });
 
-  it('gives 180 when the arm is overhead: elbow (0,-2)', () => {
-    expect(shoulderElevation(j(0, 0), j(0, -2), j(0, 1)).deg).toBe(180);
+  it('gives 180 for an overhead arm: shoulder (100,100), elbow (100,0)', () => {
+    expect(shoulderElevation(j(100, 100), j(100, 0)).deg).toBe(180);
   });
 
-  it('carries the weakest joint confidence', () => {
-    const r = shoulderElevation(j(0, 0, 0.9), j(2, 0, 0.7), j(0, 1, 0.85));
+  it('gives 45 for an arm 45 degrees below horizontal: elbow (200,200)', () => {
+    expect(shoulderElevation(j(100, 100), j(200, 200)).deg).toBe(45);
+  });
+
+  it('gives the same angle when the elbow is on the other side of the shoulder', () => {
+    expect(shoulderElevation(j(100, 100), j(0, 100)).deg).toBe(90);
+  });
+
+  it('carries the weakest joint confidence, ignoring any hip', () => {
+    const shoulder = j(100, 100, 0.9);
+    const elbow = j(200, 100, 0.7);
+    const hip = j(100, 200, 0.1);
+    void hip;
+    const r = shoulderElevation(shoulder, elbow);
     expect(r.deg).toBe(90);
     expect(r.conf).toBe(0.7);
+  });
+
+  it('gives NaN when the elbow coincides with the shoulder', () => {
+    expect(Number.isNaN(shoulderElevation(j(100, 100), j(100, 100)).deg)).toBe(true);
   });
 });

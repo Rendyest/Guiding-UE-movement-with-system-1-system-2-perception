@@ -156,3 +156,41 @@ code {
 .angle-list.dimmed {
   opacity: 0.55;
 }
+
+/* Quality-gate badge: green/red plus a text reason, never colour alone. */
+.gate-badge {
+  display: inline-block;
+  margin: 0.5rem 0 0 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--line);
+  font-weight: 700;
+}
+
+.gate-ok {
+  background: #0d7a3f;
+  border-color: #0d7a3f;
+  color: #fff;
+}
+
+.gate-bad {
+  background: #b00020;
+  border-color: #b00020;
+  color: #fff;
+}
+
+.gate-warning {
+  display: inline-block;
+  margin: 0.5rem 0 0 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 2px dashed var(--line);
+  font-weight: 600;
+}
+
+.calibration-preview {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  margin: 1rem 0;
+}

@@ -5,8 +5,10 @@
  * Conventions (image coordinates, y grows downward — the sign cancels out):
  * - elbow flexion: interior angle at the elbow. Straight arm = 180, fully bent -> small.
  * - shoulder elevation: angle at the shoulder between the upper arm
- *   (shoulder -> elbow) and the torso-down direction (shoulder -> hip).
+ *   (shoulder -> elbow) and the image vertical (straight down in the picture).
  *   0 = arm hanging at the side, 90 = arm horizontal, 180 = arm overhead.
+ *   The reference is the image vertical, not the torso — assumes a roughly
+ *   level camera and an upright seat; trunk lean is read as arm movement.
  */
 
 export interface XY {
@@ -48,8 +50,14 @@ export function elbowFlexion(shoulder: Joint, elbow: Joint, wrist: Joint): Angle
   return { deg: angleAtVertex(shoulder, elbow, wrist), conf: minConf(shoulder.conf, elbow.conf, wrist.conf) };
 }
 
-export function shoulderElevation(shoulder: Joint, elbow: Joint, hip: Joint): AngleResult {
-  return { deg: angleAtVertex(elbow, shoulder, hip), conf: minConf(shoulder.conf, elbow.conf, hip.conf) };
+/**
+ * Shoulder elevation against the image vertical: the third point sits directly
+ * below the shoulder, so no hip landmark is needed and the hip affects
+ * neither the angle nor the confidence.
+ */
+export function shoulderElevation(shoulder: Joint, elbow: Joint): AngleResult {
+  const down: XY = { x: shoulder.x, y: shoulder.y + 1 };
+  return { deg: angleAtVertex(elbow, shoulder, down), conf: minConf(shoulder.conf, elbow.conf) };
 }
 
 /**

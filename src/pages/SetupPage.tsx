@@ -1,6 +1,7 @@
+import { CalibrationStep } from '../components/CalibrationStep';
 import { MockTransport } from '../components/MockTransport';
 
-/** Participant route. Camera checks and consent arrive in slice 6; no dashboards here. */
+/** Participant route. Consent and remaining camera checks arrive in slice 6; no dashboards here. */
 export function SetupPage() {
   return (
     <div>
@@ -9,10 +10,11 @@ export function SetupPage() {
         Welcome. When sessions begin, the task will be <strong>wash your face with the cloth</strong>,
         guided at your own pace. You can pause or stop at any time — no explanation needed.
       </p>
+      <CalibrationStep />
       <MockTransport />
       <p>
-        Camera setup checks (camera found, framing, lighting, measured fps, calibration) and consent
-        choices arrive in slice 6. This slice makes no camera or cloud calls.
+        Remaining camera setup checks (camera found, framing, lighting, measured fps) and consent
+        choices arrive in slice 6. This slice makes no cloud calls.
       </p>
     </div>
   );

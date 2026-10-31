@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { Joint2D, PoseFrame } from '../contracts';
 import { isLowConfidence } from '../pose/angles';
+import { GATE_REASON_TEXT } from '../pose/gate';
 
 interface VideoStageProps {
   /** Latest frame from either source; null before the first frame. */
@@ -14,6 +15,8 @@ interface VideoStageProps {
   /** Live camera element. Detached (no stream) in mock mode. */
   videoRef: RefObject<HTMLVideoElement>;
   cameraOn: boolean;
+  /** No stored calibration: the gate runs visibility-only and is less reliable. */
+  uncalibrated?: boolean;
 }
 
 const SEGMENTS: ReadonlyArray<readonly [string, string]> = [
@@ -77,7 +80,15 @@ export function drawList(
  * landmark 12/14/16 always means the person's right arm, so overlay joints
  * and angle labels refer to the same arm either way.
  */
-export function VideoStage({ frame, mirrored, showSkeleton, dimBelowConf, videoRef, cameraOn }: VideoStageProps) {
+export function VideoStage({
+  frame,
+  mirrored,
+  showSkeleton,
+  dimBelowConf,
+  videoRef,
+  cameraOn,
+  uncalibrated = false,
+}: VideoStageProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -164,6 +175,16 @@ export function VideoStage({ frame, mirrored, showSkeleton, dimBelowConf, videoR
       />
       {!cameraOn && <p className="stage-placeholder">Camera off — showing mock replay skeleton.</p>}
       <canvas ref={canvasRef} className="stage-canvas" aria-hidden="true" />
+      {frame && (
+        <p role="status" className={frame.gate.ok ? 'gate-badge gate-ok' : 'gate-badge gate-bad'}>
+          {frame.gate.ok
+            ? 'Signal good'
+            : `Signal poor: ${frame.gate.reasons.map((reason) => GATE_REASON_TEXT[reason]).join('; ')}`}
+        </p>
+      )}
+      {uncalibrated && (
+        <p className="gate-warning">No calibration yet — the signal check is less reliable.</p>
+      )}
     </div>
   );
 }
