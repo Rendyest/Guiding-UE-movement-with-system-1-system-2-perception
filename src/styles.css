@@ -186,6 +186,37 @@ code {
   font-weight: 600;
 }
 
+/* Score meter: a bar with no digits, next to a text label — never colour alone. */
+.score-bar {
+  width: 100%;
+  max-width: 20rem;
+  height: 1.25rem;
+  border: 2px solid var(--line);
+  background: var(--paper);
+}
+
+.score-fill {
+  height: 100%;
+}
+
+.score-fill-steady {
+  background: #0d7a3f;
+}
+
+.score-fill-unsteady {
+  background: #b26a00;
+}
+
+.score-fill-very-unsteady {
+  background: #b00020;
+}
+
+/* Delivered coaching message: 1 to 2 sentences, large text. */
+.coach-message {
+  font-size: 1.5rem;
+  line-height: 1.4;
+}
+
 .calibration-preview {
   display: block;
   width: 100%;

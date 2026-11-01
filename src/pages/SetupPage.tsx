@@ -1,4 +1,5 @@
 import { CalibrationStep } from '../components/CalibrationStep';
+import { FaceReachStep } from '../components/FaceReachStep';
 import { MockTransport } from '../components/MockTransport';
 
 /** Participant route. Consent and remaining camera checks arrive in slice 6; no dashboards here. */
@@ -11,6 +12,7 @@ export function SetupPage() {
         guided at your own pace. You can pause or stop at any time — no explanation needed.
       </p>
       <CalibrationStep />
+      <FaceReachStep />
       <MockTransport />
       <p>
         Remaining camera setup checks (camera found, framing, lighting, measured fps) and consent

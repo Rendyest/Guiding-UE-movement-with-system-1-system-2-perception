@@ -13,7 +13,19 @@
           "r_wrist": { "x": 0.55, "y": 0.8, "conf": 0.9 },
           "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.93 },
           "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.92 },
-          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.92 }
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.92 },
+          "nose": { "x": 0.5, "y": 0.22, "conf": 0.9 },
+          "l_eye_in": { "x": 0.47, "y": 0.24, "conf": 0.9 },
+          "l_eye": { "x": 0.45, "y": 0.24, "conf": 0.9 },
+          "l_eye_out": { "x": 0.43, "y": 0.24, "conf": 0.9 },
+          "r_eye_in": { "x": 0.53, "y": 0.24, "conf": 0.9 },
+          "r_eye": { "x": 0.55, "y": 0.24, "conf": 0.9 },
+          "r_eye_out": { "x": 0.57, "y": 0.24, "conf": 0.9 },
+          "l_ear": { "x": 0.4, "y": 0.27, "conf": 0.9 },
+          "r_ear": { "x": 0.6, "y": 0.27, "conf": 0.9 },
+          "mouth_l": { "x": 0.48, "y": 0.26, "conf": 0.9 },
+          "mouth_r": { "x": 0.52, "y": 0.26, "conf": 0.9 },
+          "r_index": { "x": 0.55, "y": 0.85, "conf": 0.9 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 152.0, "conf": 0.91 },
@@ -39,7 +51,19 @@
           "r_wrist": { "x": 0.48, "y": 0.35, "conf": 0.88 },
           "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.9 },
           "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.91 },
-          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.91 }
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.91 },
+          "nose": { "x": 0.5, "y": 0.22, "conf": 0.9 },
+          "l_eye_in": { "x": 0.47, "y": 0.24, "conf": 0.9 },
+          "l_eye": { "x": 0.45, "y": 0.24, "conf": 0.9 },
+          "l_eye_out": { "x": 0.43, "y": 0.24, "conf": 0.9 },
+          "r_eye_in": { "x": 0.53, "y": 0.24, "conf": 0.9 },
+          "r_eye": { "x": 0.55, "y": 0.24, "conf": 0.9 },
+          "r_eye_out": { "x": 0.57, "y": 0.24, "conf": 0.9 },
+          "l_ear": { "x": 0.4, "y": 0.27, "conf": 0.9 },
+          "r_ear": { "x": 0.6, "y": 0.27, "conf": 0.9 },
+          "mouth_l": { "x": 0.48, "y": 0.26, "conf": 0.9 },
+          "mouth_r": { "x": 0.52, "y": 0.26, "conf": 0.9 },
+          "r_index": { "x": 0.47, "y": 0.3, "conf": 0.88 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 87.2, "conf": 0.91 },
@@ -60,7 +84,19 @@
           "r_wrist": { "x": 0.54, "y": 0.62, "conf": 0.38 },
           "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.88 },
           "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.88 },
-          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.88 }
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.88 },
+          "nose": { "x": 0.5, "y": 0.22, "conf": 0.9 },
+          "l_eye_in": { "x": 0.47, "y": 0.24, "conf": 0.9 },
+          "l_eye": { "x": 0.45, "y": 0.24, "conf": 0.9 },
+          "l_eye_out": { "x": 0.43, "y": 0.24, "conf": 0.9 },
+          "r_eye_in": { "x": 0.53, "y": 0.24, "conf": 0.9 },
+          "r_eye": { "x": 0.55, "y": 0.24, "conf": 0.9 },
+          "r_eye_out": { "x": 0.57, "y": 0.24, "conf": 0.9 },
+          "l_ear": { "x": 0.4, "y": 0.27, "conf": 0.9 },
+          "r_ear": { "x": 0.6, "y": 0.27, "conf": 0.9 },
+          "mouth_l": { "x": 0.48, "y": 0.26, "conf": 0.9 },
+          "mouth_r": { "x": 0.52, "y": 0.26, "conf": 0.9 },
+          "r_index": { "x": 0.54, "y": 0.6, "conf": 0.4 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 74.5, "conf": 0.4 },
@@ -73,6 +109,11 @@
       "kind": "system1_state",
       "at_ms": 2000,
       "data": { "t": 2.0, "state": "hesitating", "score": 0.58, "top_signal": "stall", "escalate": false }
+    },
+    {
+      "kind": "system1_state",
+      "at_ms": 2500,
+      "data": { "t": 2.5, "state": "cant_see_you", "score": 0.0, "top_signal": "stall", "escalate": false }
     },
     {
       "kind": "system1_state",
@@ -103,7 +144,19 @@
           "r_wrist": { "x": 0.47, "y": 0.33, "conf": 0.9 },
           "l_shoulder": { "x": 0.45, "y": 0.42, "conf": 0.9 },
           "r_hip": { "x": 0.55, "y": 0.7, "conf": 0.9 },
-          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.9 }
+          "l_hip": { "x": 0.45, "y": 0.7, "conf": 0.9 },
+          "nose": { "x": 0.5, "y": 0.22, "conf": 0.9 },
+          "l_eye_in": { "x": 0.47, "y": 0.24, "conf": 0.9 },
+          "l_eye": { "x": 0.45, "y": 0.24, "conf": 0.9 },
+          "l_eye_out": { "x": 0.43, "y": 0.24, "conf": 0.9 },
+          "r_eye_in": { "x": 0.53, "y": 0.24, "conf": 0.9 },
+          "r_eye": { "x": 0.55, "y": 0.24, "conf": 0.9 },
+          "r_eye_out": { "x": 0.57, "y": 0.24, "conf": 0.9 },
+          "l_ear": { "x": 0.4, "y": 0.27, "conf": 0.9 },
+          "r_ear": { "x": 0.6, "y": 0.27, "conf": 0.9 },
+          "mouth_l": { "x": 0.48, "y": 0.26, "conf": 0.9 },
+          "mouth_r": { "x": 0.52, "y": 0.26, "conf": 0.9 },
+          "r_index": { "x": 0.46, "y": 0.28, "conf": 0.9 }
         },
         "angles": {
           "r_elbow_flexion": { "deg": 96.3, "conf": 0.9 },

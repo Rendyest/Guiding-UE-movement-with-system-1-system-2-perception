@@ -35,15 +35,25 @@ const SYSTEM1_STATES: readonly System1StateName[] = [
   'cant_see_you',
 ];
 
-export type TopSignal = 'stall' | 'jitter' | 'compensation' | 'failed_range';
+export type TopSignal = 'stall' | 'jitter' | 'compensation' | 'failed_range' | 'drop';
 
-const TOP_SIGNALS: readonly TopSignal[] = ['stall', 'jitter', 'compensation', 'failed_range'];
+const TOP_SIGNALS: readonly TopSignal[] = [
+  'stall',
+  'jitter',
+  'compensation',
+  'failed_range',
+  'drop',
+];
 
 export interface System1State {
   t: number;
   state: System1StateName;
   score: number;
-  top_signal: TopSignal;
+  /**
+   * Main suspected cause. Optional (or empty) for moving_well, which has no
+   * cause to name; required for every other state.
+   */
+  top_signal?: TopSignal;
   escalate: boolean;
 }
 
@@ -94,15 +104,20 @@ export function isPoseFrame(v: unknown): v is PoseFrame {
 
 export function isSystem1State(v: unknown): v is System1State {
   if (!isRecord(v)) return false;
-  return (
-    typeof v['t'] === 'number' &&
-    typeof v['state'] === 'string' &&
-    SYSTEM1_STATES.includes(v['state'] as System1StateName) &&
-    typeof v['score'] === 'number' &&
-    typeof v['top_signal'] === 'string' &&
-    TOP_SIGNALS.includes(v['top_signal'] as TopSignal) &&
-    typeof v['escalate'] === 'boolean'
-  );
+  if (
+    typeof v['t'] !== 'number' ||
+    typeof v['state'] !== 'string' ||
+    !SYSTEM1_STATES.includes(v['state'] as System1StateName) ||
+    typeof v['score'] !== 'number' ||
+    typeof v['escalate'] !== 'boolean'
+  ) {
+    return false;
+  }
+  const top = v['top_signal'];
+  if (v['state'] === 'moving_well') {
+    return top === undefined || top === '' || (typeof top === 'string' && TOP_SIGNALS.includes(top as TopSignal));
+  }
+  return typeof top === 'string' && TOP_SIGNALS.includes(top as TopSignal);
 }
 
 export function isCoachEvent(v: unknown): v is CoachEvent {

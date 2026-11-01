@@ -11,6 +11,10 @@ export interface GateThresholds {
   smooth_frames: number;
   /** How many recent scale-invariant bone lengths the drift reference covers. */
   history_frames: number;
+  /** Consecutive flagged frames to enter the Can't see you state. */
+  cant_see_enter_frames: number;
+  /** Consecutive clean frames to leave the Can't see you state. */
+  cant_see_exit_frames: number;
 }
 
 /** Calibrated baselines: 2D bone lengths captured while the person faces the camera. */

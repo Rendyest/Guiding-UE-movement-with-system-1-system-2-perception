@@ -7,6 +7,8 @@ import type { Point2D } from '../src/pose/poseFrame';
 // Fixed fake landmarks (indices per MediaPipe Pose). Hand-checkable:
 // R_SHOULDER(12)=(0,0), R_ELBOW(14)=(1,0), R_WRIST(16)=(1,1) -> flexion 90;
 // R_HIP(24)=(0,1) -> elevation of (1,0) against (0,1) is 90.
+// Face: NOSE(0), L/R_EYE(1-6), L/R_EAR(7/8), MOUTH_L(9), MOUTH_R(10),
+// R_INDEX(20).
 function fakeLandmarks(): Point2D[] {
   const pts: Point2D[] = Array.from({ length: 33 }, () => ({ x: 0, y: 0, visibility: 0 }));
   pts[12] = { x: 0, y: 0, visibility: 0.9 };
@@ -16,6 +18,18 @@ function fakeLandmarks(): Point2D[] {
   pts[11] = { x: -0.5, y: 0, visibility: 0.9 };
   pts[13] = { x: -1, y: 0.2, visibility: 0.9 };
   pts[15] = { x: -1, y: 1, visibility: 0.9 };
+  pts[0] = { x: 0.5, y: 0.22, visibility: 0.9 };
+  pts[1] = { x: 0.47, y: 0.24, visibility: 0.9 };
+  pts[2] = { x: 0.45, y: 0.24, visibility: 0.9 };
+  pts[3] = { x: 0.43, y: 0.24, visibility: 0.9 };
+  pts[4] = { x: 0.53, y: 0.24, visibility: 0.9 };
+  pts[5] = { x: 0.55, y: 0.24, visibility: 0.9 };
+  pts[6] = { x: 0.57, y: 0.24, visibility: 0.9 };
+  pts[7] = { x: 0.4, y: 0.27, visibility: 0.9 };
+  pts[8] = { x: 0.6, y: 0.27, visibility: 0.9 };
+  pts[9] = { x: 0.48, y: 0.26, visibility: 0.9 };
+  pts[10] = { x: 0.52, y: 0.26, visibility: 0.9 };
+  pts[20] = { x: 1, y: 1.1, visibility: 0.9 };
   return pts;
 }
 
@@ -51,5 +65,21 @@ describe('buildPoseFrame', () => {
     const frame = buildPoseFrame([], 0, 0);
     expect(isPoseFrame(frame)).toBe(true);
     expect(frame.joints['r_elbow']?.conf).toBe(0);
+  });
+
+  it('emits the face joints the reach detector needs, from the pinned indices', () => {
+    const frame = buildPoseFrame(fakeLandmarks(), 1.5, 24);
+    expect(frame.joints['nose']).toEqual({ x: 0.5, y: 0.22, conf: 0.9 });
+    expect(frame.joints['l_eye_in']).toEqual({ x: 0.47, y: 0.24, conf: 0.9 });
+    expect(frame.joints['l_eye']).toEqual({ x: 0.45, y: 0.24, conf: 0.9 });
+    expect(frame.joints['l_eye_out']).toEqual({ x: 0.43, y: 0.24, conf: 0.9 });
+    expect(frame.joints['r_eye_in']).toEqual({ x: 0.53, y: 0.24, conf: 0.9 });
+    expect(frame.joints['r_eye']).toEqual({ x: 0.55, y: 0.24, conf: 0.9 });
+    expect(frame.joints['r_eye_out']).toEqual({ x: 0.57, y: 0.24, conf: 0.9 });
+    expect(frame.joints['l_ear']).toEqual({ x: 0.4, y: 0.27, conf: 0.9 });
+    expect(frame.joints['r_ear']).toEqual({ x: 0.6, y: 0.27, conf: 0.9 });
+    expect(frame.joints['mouth_l']).toEqual({ x: 0.48, y: 0.26, conf: 0.9 });
+    expect(frame.joints['mouth_r']).toEqual({ x: 0.52, y: 0.26, conf: 0.9 });
+    expect(frame.joints['r_index']).toEqual({ x: 1, y: 1.1, conf: 0.9 });
   });
 });

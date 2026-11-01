@@ -1,10 +1,25 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { SessionPage } from '../src/pages/SessionPage';
+import { SessionPage, defaultSource } from '../src/pages/SessionPage';
+import defaults from '../src/config/config.default.json';
+import {
+  CHECKING_IN,
+  COACH_BUTTON_LABEL,
+  FIX_BY_REASON,
+  LOCAL_FALLBACK,
+  SESSION_INTRO,
+  SESSION_PRIVACY_NOTE,
+  STATE_LABEL,
+  TASK_NAME,
+  TOP_SIGNAL_WHY,
+  fixLineFor,
+} from '../src/copy';
 import { MetricsPage } from '../src/pages/MetricsPage';
 import { publishLiveStats } from '../src/pose/liveStats';
 import { AngleList } from '../src/components/AngleReadout';
+import { StruggleIndicator } from '../src/components/StruggleIndicator';
+import { CoachPanel } from '../src/components/CoachPanel';
 import { MockStreamContext, type MockStreamValue } from '../src/mock/MockStreamContext';
 import { MockPlayer } from '../src/mock/mockStreamPlayer';
 import { parseReplayFile } from '../src/contracts';
@@ -66,7 +81,7 @@ function preloadedValue(): MockStreamValue {
 function sessionMarkup(): string {
   return renderToStaticMarkup(
     <MockStreamContext.Provider value={preloadedValue()}>
-      <SessionPage />
+      <SessionPage initialSource="mock" />
     </MockStreamContext.Provider>,
   );
 }
@@ -101,6 +116,145 @@ describe('session has no loop statistics', () => {
     expect(html).not.toMatch(BANNED);
     expect(html).not.toMatch(STAT_TESTID);
   });
+
+  it('renders the session page with no dev controls', () => {
+    // Grounded in the committed defaults, not in any local override.
+    expect(defaults.ui.dev_controls).toBe(false);
+    const html = sessionMarkup();
+    expect(html).not.toContain('Picture source');
+    expect(html).not.toContain('Mock replay');
+    expect(html).not.toContain('Step one event');
+  });
+
+  it('every copy string passes the banned-word and digit checks', () => {
+    const strings = [
+      ...Object.values(STATE_LABEL),
+      ...Object.values(TOP_SIGNAL_WHY),
+      ...FIX_BY_REASON.map((f) => f.line),
+      fixLineFor([]),
+      CHECKING_IN,
+      LOCAL_FALLBACK,
+      COACH_BUTTON_LABEL,
+      TASK_NAME,
+      SESSION_INTRO,
+      SESSION_PRIVACY_NOTE,
+    ];
+    expect(strings.length).toBeGreaterThan(10);
+    for (const s of strings) {
+      expect(s).not.toMatch(BANNED);
+      expect(s).not.toMatch(/\d/);
+    }
+  });
+
+  it('defaults to live without dev controls, mock with them', () => {
+    expect(defaultSource(false, '')).toBe('live');
+    expect(defaultSource(true, '')).toBe('mock');
+  });
+
+  it('honours ?source=mock in the URL for demos', () => {
+    expect(defaultSource(false, '?source=mock')).toBe('mock');
+    expect(defaultSource(true, '?source=mock')).toBe('mock');
+    expect(defaultSource(false, '?source=live')).toBe('live');
+  });
+
+  it('the banned pattern catches a hard-coded violation', () => {
+    expect('Camera on, about 24 fps. 3 calls saved.').toMatch(BANNED);
+  });
+});
+
+describe('session indicator and coach panel', () => {
+  function stripTags(html: string): string {
+    return html.replace(/<[^>]+>/g, ' ');
+  }
+
+  it('renders every System 1 state with no banned words', () => {
+    for (const state of ['moving_well', 'hesitating', 'struggling', 'cant_see_you'] as const) {
+      const html = renderToStaticMarkup(
+        <StruggleIndicator state={state} score={0.81} fixLine="Keep your arm in view of the camera." />,
+      );
+      expect(html).not.toMatch(BANNED);
+      expect(html).not.toMatch(STAT_TESTID);
+    }
+  });
+
+  it("shows the fix line for Can't see you", () => {
+    const html = renderToStaticMarkup(
+      <StruggleIndicator state="cant_see_you" score={0.2} fixLine="Keep your arm in view of the camera." />,
+    );
+    // React escapes the apostrophe in static markup.
+    expect(html).toContain('Can&#x27;t see you');
+    expect(html).toContain('Keep your arm in view of the camera.');
+  });
+
+  it('shows the drop why line for a falling hand', () => {
+    const html = renderToStaticMarkup(
+      <StruggleIndicator state="struggling" score={0.9} fixLine={null} topSignal="drop" />,
+    );
+    expect(html).toContain('Your hand is coming down.');
+    expect(html).not.toMatch(BANNED);
+    expect(html).not.toMatch(STAT_TESTID);
+  });
+
+  it('shows the why line only for hesitating and struggling with a top signal', () => {
+    const hesitating = renderToStaticMarkup(
+      <StruggleIndicator state="hesitating" score={0.5} fixLine={null} topSignal="stall" />,
+    );
+    expect(hesitating).toContain('Movement has stalled.');
+    const movingWell = renderToStaticMarkup(
+      <StruggleIndicator state="moving_well" score={0.1} fixLine={null} topSignal="stall" />,
+    );
+    expect(movingWell).not.toContain('Movement has stalled.');
+    const noSignal = renderToStaticMarkup(
+      <StruggleIndicator state="struggling" score={0.9} fixLine={null} topSignal={undefined} />,
+    );
+    expect(noSignal).not.toContain('Movement has stalled.');
+    for (const html of [hesitating, movingWell, noSignal]) {
+      expect(html).not.toMatch(BANNED);
+    }
+  });
+
+  it('renders the score meter with no digits, percent, or counts', () => {
+    const html = renderToStaticMarkup(<StruggleIndicator state="struggling" score={0.81} fixLine={null} />);
+    expect(html).toContain('score-bar');
+    const text = stripTags(html);
+    expect(text).not.toMatch(/\d/);
+    expect(text).not.toContain('%');
+    expect(text).not.toMatch(/\bof\b/i);
+  });
+
+  it('renders the coach panel idle with no banned words', () => {
+    const html = renderToStaticMarkup(
+      <CoachPanel
+        frame={okFrame()}
+        systemState="hesitating"
+        topSignal="stall"
+        cantSeeYouActive={false}
+        escalationId={0}
+        statsEpoch="test"
+      />,
+    );
+    expect(html).toContain('Get a tip');
+    expect(html).not.toMatch(BANNED);
+    expect(html).not.toMatch(STAT_TESTID);
+  });
+
+  it('disables the button instead of repeating the fix line when tracking is lost', () => {
+    const html = renderToStaticMarkup(
+      <CoachPanel
+        frame={okFrame()}
+        systemState="cant_see_you"
+        topSignal={undefined}
+        cantSeeYouActive
+        escalationId={0}
+        statsEpoch="test"
+      />,
+    );
+    // The fix line lives in StruggleIndicator; the panel just stays disabled.
+    expect(html).not.toContain('Try turning to face the camera.');
+    expect(html).not.toContain('Try keeping your forearm');
+    expect(html).toContain('disabled');
+    expect(html).not.toMatch(BANNED);
+  });
 });
 
 describe('fps lives outside the session view', () => {
@@ -113,7 +267,13 @@ describe('fps lives outside the session view', () => {
       '../src/components/MockTransport.tsx',
       '../src/components/SourceSwitch.tsx',
       '../src/components/ErrorBoundary.tsx',
+      '../src/components/StruggleIndicator.tsx',
+      '../src/components/CoachPanel.tsx',
       '../src/pose/statusText.ts',
+      '../src/system1/cantSeeYou.ts',
+      '../src/system1/windows.ts',
+      '../src/coach/summary.ts',
+      '../src/copy.ts',
     ];
     for (const rel of sessionFacing) {
       const src = readFileSync(new URL(rel, import.meta.url), 'utf-8');

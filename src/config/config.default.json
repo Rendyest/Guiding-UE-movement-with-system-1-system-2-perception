@@ -5,22 +5,52 @@
     "bone_length_tol": 0.3,
     "foreshortening_min": 0.5,
     "smooth_frames": 5,
-    "history_frames": 15
+    "history_frames": 15,
+    "cant_see_enter_frames": 3,
+    "cant_see_e
+    xit_frames": 5
   },
-  "gate_note": "Gate ratios are scale-normalised by shoulder width (see src/pose/gate.ts): bone_length_tol is the max fractional change of a scale-invariant bone length versus the median of recent history (0.3 = 30 percent); foreshortening_min is the minimum median projected/expected arm-bone ratio over smooth_frames recent frames; history_frames is how many recent lengths the drift reference covers.",
+  "gate_note": "Gate ratios are scale-normalised by shoulder width (see src/pose/gate.ts): bone_length_tol is the max fractional change of a scale-invariant bone length versus the median of recent history (0.3 = 30 percent); foreshortening_min is the minimum median projected/expected arm-bone ratio over smooth_frames recent frames; history_frames is how many recent lengths the drift reference covers; cant_see_enter_frames/cant_see_exit_frames are the consecutive flagged/clean frames to enter/leave the Can't see you state.",
   "struggle": {
     "enter_threshold": 0.7,
     "exit_threshold": 0.4,
-    "consecutive_windows": 3
+    "consecutive_windows": 3,
+    "window_frames": 30,
+    "min_clean_frames": 10,
+    "hop_frames": 15,
+    "reach_window_s": 4,
+    "hold_s": 30,
+    "hold_max_s": 60,
+    "drop_s": 1.5,
+    "drop_tolerance_s": 0.5,
+    "drop_speed": 1.0,
+    "sink_weight": 0.6,
+    "stall_speed": 0.2,
+    "stall_s": 1.0,
+    "shoulder_hike_frac": 0.15,
+    "start_motion_deg": 5,
+    "start_motion_dist": 0.1
+  },
+  "face": {
+    "reach_margin": 0.5,
+    "zone_min": 0.25,
+    "elbow_margin_deg": 20,
+    "default_touch_dist": 0.2,
+    "default_elbow_deg": 70,
+    "anchor_smooth": 0.1
   },
   "coach": {
-    "cooldown_s": 60
+    "timeout_ms": 10000,
+    "cooldown_ms": 60000,
+    "max_reply_chars": 300,
+    "summary_window_s": 10
   },
   "baseline": {
     "fixed_interval_s": 2
   },
   "ui": {
     "readout_hz": 5,
-    "live_emit_hz": 30
+    "live_emit_hz": 30,
+    "dev_controls": false
   }
 }

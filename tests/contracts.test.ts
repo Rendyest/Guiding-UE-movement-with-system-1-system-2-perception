@@ -43,6 +43,28 @@ describe('contracts', () => {
     expect(isSystem1State({ ...GOOD_STATE, state: 'confused' })).toBe(false);
   });
 
+  it('accepts moving_well with a missing or empty top_signal', () => {
+    const movingWell = { t: 1.0, state: 'moving_well', score: 0.12, escalate: false };
+    expect(isSystem1State({ ...movingWell, top_signal: 'stall' })).toBe(true);
+    expect(isSystem1State(movingWell)).toBe(true);
+    expect(isSystem1State({ ...movingWell, top_signal: '' })).toBe(true);
+  });
+
+  it('keeps top_signal required for hesitating and struggling', () => {
+    const { top_signal: _dropped, ...hesitating } = GOOD_STATE;
+    void _dropped;
+    expect(isSystem1State(hesitating)).toBe(false);
+    expect(isSystem1State({ ...GOOD_STATE, state: 'struggling' })).toBe(true);
+    expect(isSystem1State({ ...GOOD_STATE, state: 'struggling', top_signal: undefined })).toBe(false);
+  });
+
+  it('accepts the drop signal for hesitating and struggling', () => {
+    expect(isSystem1State({ ...GOOD_STATE, top_signal: 'drop' })).toBe(true);
+    expect(isSystem1State({ ...GOOD_STATE, state: 'struggling', top_signal: 'drop' })).toBe(true);
+    expect(isSystem1State({ ...GOOD_STATE, state: 'cant_see_you', top_signal: 'drop' })).toBe(true);
+    expect(isSystem1State({ ...GOOD_STATE, top_signal: 'jitter' })).toBe(true);
+  });
+
   it('accepts a well-formed coach_event', () => {
     expect(isCoachEvent(GOOD_COACH)).toBe(true);
   });

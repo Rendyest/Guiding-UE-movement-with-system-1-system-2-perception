@@ -17,7 +17,7 @@ type Phase = 'idle' | 'warming' | 'capturing';
 const WARMUP_TIMEOUT_MS = 30000;
 
 /**
- * Calibration step for /setup. A ~2 s capture ("stand facing the camera,
+ * Calibration step for /setup. A ~2 s capture ("sit facing the camera,
  * arms relaxed") stores upper-arm, forearm, and shoulder-width baselines for
  * the per-frame quality gate. Pass/fail with a retry button; continuing
  * without calibration leaves a warning and a less reliable gate.
@@ -116,7 +116,7 @@ export function CalibrationStep() {
     <section aria-label="Calibration">
       <h2>Calibration</h2>
       <p>
-        Stand facing the camera, arms relaxed. Ensure your shoulder, elbows and wrists are in view. We measure your upper arm, forearm, and shoulder
+        Sit facing the camera, arms relaxed. Ensure your shoulder, elbows and wrists are in view. We measure your upper arm, forearm, and shoulder
         width during a 2-second capture.
       </p>
       {passed && state.baseline && (
@@ -134,10 +134,10 @@ export function CalibrationStep() {
         </p>
       )}
       {phase === 'warming' && (
-        <p aria-live="polite">Starting camera… stand facing the camera, arms relaxed.</p>
+        <p aria-live="polite">Starting camera… sit facing the camera, arms relaxed.</p>
       )}
       {phase === 'capturing' && (
-        <p aria-live="polite">Capturing… stand facing the camera, arms relaxed.</p>
+        <p aria-live="polite">Capturing… sit facing the camera, arms relaxed.</p>
       )}
       {!busy && (
         <div className="button-row">

@@ -3,11 +3,46 @@ import { buildConfig, deepMerge, isAppConfig } from '../src/config';
 import defaults from '../src/config/config.default.json';
 
 const GOOD_CONFIG = {
-  gate: { vis_min: 0.5, bone_length_tol: 0.3, foreshortening_min: 0.5, smooth_frames: 5, history_frames: 15 },
-  struggle: { enter_threshold: 0.7, exit_threshold: 0.4, consecutive_windows: 3 },
-  coach: { cooldown_s: 60 },
+  gate: {
+    vis_min: 0.5,
+    bone_length_tol: 0.3,
+    foreshortening_min: 0.5,
+    smooth_frames: 5,
+    history_frames: 15,
+    cant_see_enter_frames: 3,
+    cant_see_exit_frames: 5,
+  },
+  struggle: {
+    enter_threshold: 0.7,
+    exit_threshold: 0.4,
+    consecutive_windows: 3,
+    window_frames: 30,
+    min_clean_frames: 10,
+    hop_frames: 15,
+    reach_window_s: 4,
+    hold_s: 30,
+    hold_max_s: 60,
+    drop_s: 1.5,
+    drop_tolerance_s: 0.5,
+    drop_speed: 1.0,
+    sink_weight: 0.6,
+    stall_speed: 0.2,
+    stall_s: 1.0,
+    shoulder_hike_frac: 0.15,
+    start_motion_deg: 5,
+    start_motion_dist: 0.1,
+  },
+  face: {
+    reach_margin: 0.5,
+    zone_min: 0.25,
+    elbow_margin_deg: 20,
+    default_touch_dist: 0.2,
+    default_elbow_deg: 70,
+    anchor_smooth: 0.1,
+  },
+  coach: { timeout_ms: 10000, cooldown_ms: 60000, max_reply_chars: 300, summary_window_s: 10 },
   baseline: { fixed_interval_s: 2 },
-  ui: { readout_hz: 5, live_emit_hz: 30 },
+  ui: { readout_hz: 5, live_emit_hz: 30, dev_controls: false },
 };
 
 describe('config validation', () => {
@@ -22,12 +57,96 @@ describe('config validation', () => {
   });
 
   it('rejects a non-numeric threshold', () => {
-    expect(isAppConfig({ ...GOOD_CONFIG, coach: { cooldown_s: 'a minute' } })).toBe(false);
+    expect(isAppConfig({ ...GOOD_CONFIG, coach: { timeout_ms: 'soon', cooldown_ms: 60000 } })).toBe(false);
+  });
+
+  it('rejects an exit threshold at or above the enter threshold', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, exit_threshold: 0.7 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a missing reach window', () => {
+    const { reach_window_s: _dropped, ...struggle } = GOOD_CONFIG.struggle;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, struggle })).toBe(false);
+  });
+
+  it('rejects a non-positive drop window', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, drop_s: 0 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a hold window longer than the hold cap', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, hold_s: 61 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a drop tolerance at or past the drop window', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, drop_tolerance_s: 1.5 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a sink weight above one', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, sink_weight: 1.5 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a negative motion distance', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, struggle: { ...GOOD_CONFIG.struggle, start_motion_dist: -0.1 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a missing detector window size', () => {
+    const { window_frames: _dropped, ...struggle } = GOOD_CONFIG.struggle;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, struggle })).toBe(false);
   });
 
   it('rejects null and non-objects', () => {
     expect(isAppConfig(null)).toBe(false);
     expect(isAppConfig('config.json')).toBe(false);
+  });
+});
+
+describe('config face section', () => {
+  it('rejects a config missing the face section', () => {
+    const { face: _face, ...rest } = GOOD_CONFIG;
+    void _face;
+    expect(isAppConfig(rest)).toBe(false);
+  });
+
+  it('rejects a zero zone minimum', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, face: { ...GOOD_CONFIG.face, zone_min: 0 } })).toBe(false);
+  });
+
+  it('rejects a non-positive default touch distance', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, face: { ...GOOD_CONFIG.face, default_touch_dist: -0.2 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a negative elbow margin', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, face: { ...GOOD_CONFIG.face, elbow_margin_deg: -1 } }),
+    ).toBe(false);
+  });
+
+  it('rejects an anchor smoothing factor above one', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, face: { ...GOOD_CONFIG.face, anchor_smooth: 1.5 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a missing anchor smoothing factor', () => {
+    const { anchor_smooth: _dropped, ...face } = GOOD_CONFIG.face;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, face })).toBe(false);
   });
 });
 
@@ -50,6 +169,52 @@ describe('config gate section', () => {
     expect(
       isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, smooth_frames: 16, history_frames: 15 } }),
     ).toBe(false);
+  });
+
+  it('rejects a zero cant_see exit count', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, cant_see_exit_frames: 0 } }),
+    ).toBe(false);
+  });
+
+  it('rejects a non-integer cant_see enter count', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, gate: { ...GOOD_CONFIG.gate, cant_see_enter_frames: 2.5 } }),
+    ).toBe(false);
+  });
+});
+
+describe('config coach section', () => {
+  it('rejects a missing timeout', () => {
+    const { timeout_ms: _dropped, ...coach } = GOOD_CONFIG.coach;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, coach })).toBe(false);
+  });
+
+  it('rejects a non-positive cooldown', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, coach: { ...GOOD_CONFIG.coach, cooldown_ms: -1 } })).toBe(false);
+  });
+
+  it('rejects a missing reply cap', () => {
+    const { max_reply_chars: _dropped, ...coach } = GOOD_CONFIG.coach;
+    void _dropped;
+    expect(isAppConfig({ ...GOOD_CONFIG, coach })).toBe(false);
+  });
+
+  it('rejects a non-positive summary window', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, coach: { ...GOOD_CONFIG.coach, summary_window_s: 0 } })).toBe(false);
+  });
+});
+
+describe('config dev controls', () => {
+  it('rejects a non-boolean dev_controls flag', () => {
+    expect(isAppConfig({ ...GOOD_CONFIG, ui: { ...GOOD_CONFIG.ui, dev_controls: 'yes' } })).toBe(false);
+  });
+
+  it('accepts dev_controls on', () => {
+    expect(
+      isAppConfig({ ...GOOD_CONFIG, ui: { ...GOOD_CONFIG.ui, dev_controls: true } }),
+    ).toBe(true);
   });
 });
 
@@ -83,7 +248,7 @@ describe('config merge', () => {
   it('keys missing from local fall back to defaults', () => {
     const cfg = buildConfig(defaults, { gate: { vis_min: 0.9 } });
     expect(cfg.gate.bone_length_tol).toBe(defaults.gate.bone_length_tol);
-    expect(cfg.coach.cooldown_s).toBe(defaults.coach.cooldown_s);
+    expect(cfg.coach.cooldown_ms).toBe(defaults.coach.cooldown_ms);
   });
 
   it('does not mutate the defaults', () => {
@@ -97,6 +262,6 @@ describe('config merge', () => {
   });
 
   it('throws if an override breaks a required field', () => {
-    expect(() => buildConfig(defaults, { coach: { cooldown_s: 'soon' } })).toThrow();
+    expect(() => buildConfig(defaults, { coach: { timeout_ms: 'soon' } })).toThrow();
   });
 });

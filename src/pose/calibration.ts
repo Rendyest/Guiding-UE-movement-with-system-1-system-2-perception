@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PoseFrame } from '../contracts';
 import { boneLengths, GATE_JOINTS, type BoneBaseline } from './gate';
+import { isFaceReach, type FaceReach } from './faceReach';
 
 /** Capture window for the setup calibration step ("about 2 s"). */
 export const CALIBRATION_CAPTURE_MS = 2000;
@@ -13,6 +14,9 @@ const STORAGE_KEY = 'mirra.calibration.v1';
 export interface CalibrationState {
   baseline: BoneBaseline | null;
   skipped: boolean;
+  /** Face-reach data from the setup face step. Null until captured (or skipped). */
+  face: FaceReach | null;
+  faceSkipped: boolean;
 }
 
 function isBaseline(v: unknown): v is BoneBaseline {
@@ -33,19 +37,31 @@ function isBaseline(v: unknown): v is BoneBaseline {
 
 /** Read the stored calibration. Safe on the server and in tests: no storage, no baseline. */
 export function loadCalibrationState(): CalibrationState {
-  const empty: CalibrationState = { baseline: null, skipped: false };
+  const empty: CalibrationState = { baseline: null, skipped: false, face: null, faceSkipped: false };
   try {
     if (typeof localStorage === 'undefined') return empty;
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return empty;
-    const parsed = JSON.parse(raw) as { baseline?: unknown; skipped?: unknown };
+    const parsed = JSON.parse(raw) as {
+      baseline?: unknown;
+      skipped?: unknown;
+      face?: unknown;
+      faceSkipped?: unknown;
+    };
     return {
       baseline: isBaseline(parsed.baseline) ? parsed.baseline : null,
       skipped: parsed.skipped === true,
+      face: isFaceReach(parsed.face) ? parsed.face : null,
+      faceSkipped: parsed.faceSkipped === true,
     };
   } catch {
     return empty;
   }
+}
+
+/** Read just the stored face-reach data. Null until captured (or skipped). */
+export function loadFaceReach(): FaceReach | null {
+  return loadCalibrationState().face;
 }
 
 function writeCalibrationState(state: CalibrationState): CalibrationState {
@@ -60,23 +76,68 @@ function writeCalibrationState(state: CalibrationState): CalibrationState {
 }
 
 export function saveBaseline(baseline: BoneBaseline): CalibrationState {
-  return writeCalibrationState({ baseline, skipped: false });
+  // A completed (re-)calibration clears the face data with it: reach checks
+  // are measured against this arm, so a new arm needs a new face step.
+  return writeCalibrationState({ baseline, skipped: false, face: null, faceSkipped: false });
 }
 
 /** The person chose to continue without calibrating; the gate stays less reliable. */
 export function markSkipped(): CalibrationState {
   const current = loadCalibrationState();
-  return writeCalibrationState({ baseline: current.baseline, skipped: true });
+  return writeCalibrationState({
+    baseline: current.baseline,
+    skipped: true,
+    face: current.face,
+    faceSkipped: current.faceSkipped,
+  });
 }
 
 /** Starting (or retrying) a capture clears the skipped flag but keeps any baseline. */
 export function beginCapture(): CalibrationState {
   const current = loadCalibrationState();
-  return writeCalibrationState({ baseline: current.baseline, skipped: false });
+  return writeCalibrationState({
+    baseline: current.baseline,
+    skipped: false,
+    face: current.face,
+    faceSkipped: current.faceSkipped,
+  });
 }
 
 export function clearCalibration(): CalibrationState {
-  return writeCalibrationState({ baseline: null, skipped: false });
+  return writeCalibrationState({ baseline: null, skipped: false, face: null, faceSkipped: false });
+}
+
+/** Store the face-step result next to the arm calibration. Derived numbers only. */
+export function saveFaceReach(face: FaceReach): CalibrationState {
+  const current = loadCalibrationState();
+  return writeCalibrationState({
+    baseline: current.baseline,
+    skipped: current.skipped,
+    face,
+    faceSkipped: false,
+  });
+}
+
+/** The person chose to continue without the face step; reach checks use standard values. */
+export function skipFaceReach(): CalibrationState {
+  const current = loadCalibrationState();
+  return writeCalibrationState({
+    baseline: current.baseline,
+    skipped: current.skipped,
+    face: current.face,
+    faceSkipped: true,
+  });
+}
+
+/** Clearing the face data never clears the arm calibration. */
+export function clearFaceReach(): CalibrationState {
+  const current = loadCalibrationState();
+  return writeCalibrationState({
+    baseline: current.baseline,
+    skipped: current.skipped,
+    face: null,
+    faceSkipped: false,
+  });
 }
 
 /** Every joint calibration needs: the working arm plus the left shoulder that anchors scale. */
@@ -152,6 +213,9 @@ export function useCalibration() {
     skip: () => setState(markSkipped()),
     begin: () => setState(beginCapture()),
     clear: () => setState(clearCalibration()),
+    saveFace: (face: FaceReach) => setState(saveFaceReach(face)),
+    skipFace: () => setState(skipFaceReach()),
+    clearFace: () => setState(clearFaceReach()),
     refresh: () => setState(loadCalibrationState()),
   };
 }

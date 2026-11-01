@@ -10,12 +10,12 @@ describe('mock-stream.json', () => {
 
     // pose_frame at 0, 1500, 2000, 3500 = 4
     expect(events.filter((e) => e.kind === 'pose_frame')).toHaveLength(4);
-    // system1_state at 1000, 2000, 3000, 4000 = 4
-    expect(events.filter((e) => e.kind === 'system1_state')).toHaveLength(4);
+    // system1_state at 1000, 2000, 2500 (cant_see_you), 3000, 4000 = 5
+    expect(events.filter((e) => e.kind === 'system1_state')).toHaveLength(5);
     // coach_event at 3100 = 1
     expect(events.filter((e) => e.kind === 'coach_event')).toHaveLength(1);
-    // 4 + 4 + 1 = 9
-    expect(events).toHaveLength(9);
+    // 4 + 5 + 1 = 10
+    expect(events).toHaveLength(10);
     // gate.ok false only at t=2.0 (foreshortening) = 1
     expect(
       events.filter((e) => e.kind === 'pose_frame' && !(e.data as { gate: { ok: boolean } }).gate.ok),

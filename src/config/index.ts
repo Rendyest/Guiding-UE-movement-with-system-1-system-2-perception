@@ -12,18 +12,47 @@ export interface AppConfig {
     foreshortening_min: number;
     smooth_frames: number;
     history_frames: number;
+    cant_see_enter_frames: number;
+    cant_see_exit_frames: number;
   };
   struggle: {
     enter_threshold: number;
     exit_threshold: number;
     consecutive_windows: number;
+    window_frames: number;
+    min_clean_frames: number;
+    hop_frames: number;
+    reach_window_s: number;
+    hold_s: number;
+    hold_max_s: number;
+    drop_s: number;
+    drop_tolerance_s: number;
+    drop_speed: number;
+    sink_weight: number;
+    stall_speed: number;
+    stall_s: number;
+    shoulder_hike_frac: number;
+    start_motion_deg: number;
+    start_motion_dist: number;
+  };
+  face: {
+    reach_margin: number;
+    zone_min: number;
+    elbow_margin_deg: number;
+    default_touch_dist: number;
+    default_elbow_deg: number;
+    anchor_smooth: number;
   };
   coach: {
-    cooldown_s: number;
+    timeout_ms: number;
+    cooldown_ms: number;
+    max_reply_chars: number;
+    summary_window_s: number;
   };
   ui: {
     readout_hz: number;
     live_emit_hz: number;
+    dev_controls: boolean;
   };
   baseline: {
     fixed_interval_s: number;
@@ -52,21 +81,92 @@ function isGate(v: unknown): v is AppConfig['gate'] {
     isNum(v['foreshortening_min']) &&
     isPositiveInt(v['smooth_frames']) &&
     isPositiveInt(v['history_frames']) &&
-    (v['smooth_frames'] as number) <= (v['history_frames'] as number)
+    (v['smooth_frames'] as number) <= (v['history_frames'] as number) &&
+    isPositiveInt(v['cant_see_enter_frames']) &&
+    isPositiveInt(v['cant_see_exit_frames'])
   );
 }
 
 function isStruggle(v: unknown): v is AppConfig['struggle'] {
   if (!isPlainObject(v)) return false;
-  return isNum(v['enter_threshold']) && isNum(v['exit_threshold']) && isNum(v['consecutive_windows']);
+  const s: Json = v;
+  const exit = s['exit_threshold'];
+  const enter = s['enter_threshold'];
+  return (
+    isNum(enter) &&
+    isNum(exit) &&
+    exit < enter &&
+    isPositiveInt(s['consecutive_windows']) &&
+    isPositiveInt(s['window_frames']) &&
+    isPositiveInt(s['min_clean_frames']) &&
+    isPositiveInt(s['hop_frames']) &&
+    isNum(s['reach_window_s']) &&
+    (s['reach_window_s'] as number) > 0 &&
+    isNum(s['hold_s']) &&
+    (s['hold_s'] as number) > 0 &&
+    isNum(s['hold_max_s']) &&
+    (s['hold_max_s'] as number) >= (s['hold_s'] as number) &&
+    isNum(s['drop_s']) &&
+    (s['drop_s'] as number) > 0 &&
+    isNum(s['drop_tolerance_s']) &&
+    (s['drop_tolerance_s'] as number) >= 0 &&
+    (s['drop_tolerance_s'] as number) < (s['drop_s'] as number) &&
+    isNum(s['drop_speed']) &&
+    (s['drop_speed'] as number) > 0 &&
+    isNum(s['sink_weight']) &&
+    (s['sink_weight'] as number) >= 0 &&
+    (s['sink_weight'] as number) <= 1 &&
+    isNum(s['stall_speed']) &&
+    (s['stall_speed'] as number) > 0 &&
+    isNum(s['stall_s']) &&
+    (s['stall_s'] as number) > 0 &&
+    isNum(s['shoulder_hike_frac']) &&
+    (s['shoulder_hike_frac'] as number) > 0 &&
+    isNum(s['start_motion_deg']) &&
+    (s['start_motion_deg'] as number) >= 0 &&
+    isNum(s['start_motion_dist']) &&
+    (s['start_motion_dist'] as number) >= 0
+  );
+}
+
+function isFace(v: unknown): v is AppConfig['face'] {
+  if (!isPlainObject(v)) return false;
+  const smooth = (v as Json)['anchor_smooth'];
+  return (
+    isNum(v['reach_margin']) &&
+    (v['reach_margin'] as number) >= 0 &&
+    isNum(v['zone_min']) &&
+    (v['zone_min'] as number) > 0 &&
+    isNum(v['elbow_margin_deg']) &&
+    (v['elbow_margin_deg'] as number) >= 0 &&
+    isNum(v['default_touch_dist']) &&
+    (v['default_touch_dist'] as number) > 0 &&
+    isNum(v['default_elbow_deg']) &&
+    isNum(smooth) &&
+    (smooth as number) >= 0 &&
+    (smooth as number) <= 1
+  );
 }
 
 function isCoach(v: unknown): v is AppConfig['coach'] {
-  return isPlainObject(v) && isNum(v['cooldown_s']);
+  if (!isPlainObject(v)) return false;
+  const c: Json = v;
+  return (
+    isPositiveInt(c['timeout_ms']) &&
+    isPositiveInt(c['cooldown_ms']) &&
+    isPositiveInt(c['max_reply_chars']) &&
+    isNum(c['summary_window_s']) &&
+    (c['summary_window_s'] as number) > 0
+  );
 }
 
 function isUi(v: unknown): v is AppConfig['ui'] {
-  return isPlainObject(v) && isNum(v['readout_hz']) && isNum(v['live_emit_hz']);
+  if (!isPlainObject(v)) return false;
+  return (
+    isNum(v['readout_hz']) &&
+    isNum(v['live_emit_hz']) &&
+    typeof v['dev_controls'] === 'boolean'
+  );
 }
 
 function isBaseline(v: unknown): v is AppConfig['baseline'] {
@@ -78,6 +178,7 @@ export function isAppConfig(v: unknown): v is AppConfig {
   return (
     isGate(v['gate']) &&
     isStruggle(v['struggle']) &&
+    isFace(v['face']) &&
     isCoach(v['coach']) &&
     isBaseline(v['baseline']) &&
     isUi(v['ui'])

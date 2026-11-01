@@ -1,0 +1,9 @@
+   import defaults from './config.default.json';
+
+   const localModules = import.meta.glob('./config.local.json', {
+     eager: true,
+     import: 'default',
+   });
+   const local = Object.values(localModules)[0] ?? {};
+
+   export const config = deepMerge(defaults, local);

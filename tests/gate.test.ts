@@ -23,6 +23,8 @@ const T: GateThresholds = {
   foreshortening_min: 0.5,
   smooth_frames: 5,
   history_frames: 15,
+  cant_see_enter_frames: 3,
+  cant_see_exit_frames: 5,
 };
 const BASELINE_100: BoneBaseline = { upperArm: 100, forearm: 100, shoulderWidth: 100 };
 
@@ -342,6 +344,25 @@ describe('hips stay out of the gate', () => {
     expect(absent).toEqual(present);
     expect(lowHip).toEqual(present);
     expect(present.reasons).toEqual(['foreshortening']);
+  });
+});
+
+describe('face points stay out of the gate', () => {
+  it('gives identical results with face joints absent or low-visibility', () => {
+    const hist = fullHist(1);
+    const clean = checkGate(jointsFor(100, 100, 100), BASELINE_100, T, hist);
+    expect(clean).toEqual({ ok: true, reasons: [], scale: 1 });
+    const withFace = jointsFor(100, 100, 100);
+    withFace['nose'] = { x: 50, y: 50, conf: 0 };
+    withFace['l_eye'] = { x: 46, y: 48, conf: 0.1 };
+    withFace['r_eye'] = { x: 54, y: 48, conf: 0.1 };
+    withFace['l_ear'] = { x: 40, y: 52, conf: 0.1 };
+    withFace['mouth_l'] = { x: 48, y: 52, conf: 0.1 };
+    withFace['mouth_r'] = { x: 52, y: 52, conf: 0.1 };
+    withFace['r_index'] = { x: 0, y: 0, conf: 0 };
+    expect(checkGate(withFace, BASELINE_100, T, { ...hist })).toEqual(clean);
+    const noFace = jointsFor(100, 100, 100);
+    expect(checkGate(noFace, BASELINE_100, T, { ...hist })).toEqual(clean);
   });
 });
 
